@@ -29,25 +29,48 @@ namespace bindings {
   using v8::Object;
   using v8::String;
   using v8::Value;
+  using v8::Uint8Array;
 
   using electronwallpaper::AttachWindow;
 
+  Local<String> MaybeLocalStringToLocalString(v8::MaybeLocal<String> str) {
+    v8::Local<v8::String> v8String;
+    bool b = str.ToLocal(&v8String);
+    if (b) {
+      return v8String;
+    }
+    return v8String;
+  }
+
+  Local<Object> MaybeLocalObjectToLocalObject(v8::MaybeLocal<Object> obj) {
+    v8::Local<v8::Object> v8Obj;
+    bool b = obj.ToLocal(&v8Obj);
+    if (b) {
+      return v8Obj;
+    }
+    return v8Obj;
+  }
+
   void AttachWindowExport(const FunctionCallbackInfo<Value>& args) {
+
     Isolate* isolate = Isolate::GetCurrent();
     HandleScope scope(isolate);
 
+    v8::Local<v8::Context> context = v8::Context::New(isolate);
+
     if (args.Length() < 1) {
-      isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, "Expected one argument")));
+      isolate->ThrowException(Exception::TypeError(MaybeLocalStringToLocalString(v8::String::NewFromUtf8(isolate, "Expected one argument"))));
       return;
     }
 
     if (!args[0]->IsObject()) {
-      Local<String> message = String::NewFromUtf8(isolate, "Expected first argument to be a window handle buffer");
+      Local<String> message = MaybeLocalStringToLocalString(String::NewFromUtf8(isolate, "Expected first argument to be a window handle buffer"));
       isolate->ThrowException(Exception::TypeError(message));
       return;
     }
 
-    unsigned char* windowHandleBuffer = (unsigned char*)node::Buffer::Data(args[0]->ToObject());
+    unsigned char* windowHandleBuffer = (unsigned char*)node::Buffer::Data(MaybeLocalObjectToLocalObject(args[0]->ToObject(context)));
+    // unsigned char* windowHandleBuffer = args[0].As<Uint8Array>();
 
     AttachWindow(windowHandleBuffer);
   }
